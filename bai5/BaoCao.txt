@@ -1,0 +1,25 @@
+BÁO CÁO PHÂN TÍCH: BẪY ÉP KIỂU VÀ TÍNH IDEMPOTENT
+1. Bẫy dữ liệu ép kiểu (Type Mismatch)
+Khái niệm:
+Xảy ra khi dữ liệu do Client (trình duyệt/Postman) gửi lên không đúng kiểu dữ liệu mà Server (Java) mong đợi.
+Nguyên nhân thực tế:
+Ví dụ: API yêu cầu ID đơn hàng là số nguyên (Long id), nhưng người dùng lại nhập sai thành chuỗi ký tự (ví dụ: /orders/abc).
+Hậu quả:
+Java không thể chuyển đổi chuỗi "abc" sang số, dẫn đến lỗi như NumberFormatException hoặc TypeMismatchException.
+Nếu không xử lý, lỗi này có thể làm gián đoạn luồng xử lý và trả về trang lỗi (400/500) không thân thiện với người dùng.
+Cách khắc phục:
+Chủ động xử lý ngoại lệ bằng try-catch hoặc @ExceptionHandler để hệ thống không bị crash, đồng thời trả về thông báo rõ ràng, dễ hiểu (ví dụ: "ID đơn hàng phải là một số").
+2. Tính Idempotent (Tính an toàn khi gọi lặp lại)
+Khái niệm:
+Một thao tác được gọi là Idempotent khi thực hiện 1 lần hay nhiều lần liên tiếp đều cho ra cùng một trạng thái cuối cùng của hệ thống, không làm sai lệch dữ liệu.
+Áp dụng trong tình huống mạng lag:
+Thao tác Hủy đơn (HTTP DELETE):
+Có tính Idempotent.
+Khi người dùng bấm hủy nhiều lần, ở lần đầu tiên đơn hàng đã bị xóa.
+Những lần sau, hệ thống không tìm thấy đơn nữa nên không thực hiện gì thêm.
+→ Trạng thái dữ liệu không thay đổi → An toàn.
+Thao tác Tạo đơn (HTTP POST):
+Không có tính Idempotent.
+Mỗi request POST đều được xem là một hành động tạo mới độc lập.
+Nếu người dùng bấm lưu nhiều lần, hệ thống sẽ tạo ra nhiều bản ghi giống nhau.
+→ Dễ gây trùng lặp dữ liệu, dữ liệu rác.
